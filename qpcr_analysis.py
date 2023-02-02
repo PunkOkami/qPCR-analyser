@@ -14,7 +14,9 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import csv
+from sys import exit as sexit
 
 file = open('data/qPCR_results_custom_genes.txt')
 reader = csv.reader(file, delimiter = '\t')
@@ -42,8 +44,6 @@ for row in reader:
 		ct_mean = row[ct_mean_index]
 		if ct_mean == '':
 			ct_mean = -1.0
-		elif  ct_mean == 'Undertermined':
-			ct_mean = -1.0
 		else:
 			ct_mean = float(ct_mean)
 		stress_data[gene_name] = ct_mean
@@ -52,11 +52,14 @@ tested_genes = ['ATG8H', 'HSP101', 'RCAR3']
 housekeeping_gene = 'ef1alfa'
 prim_3_quality_gene = 'GAPDH3'
 prim_5_quality_gene = 'GAPDH5'
+if control_data[housekeeping_gene] == -1.0 or stress_data[housekeeping_gene] == -1.0:
+	print('There is no Ct data available for housekeeping gene, execution halted, check input file')
+	sexit(1)
 print(f'Gene used as referance is {housekeeping_gene}\n')
 
 delta_ct_values_control = {}
 print('Control data:')
-if control_data[prim_3_quality_gene] == -1.0 or control_data[prim_5_quality_gene] == (-1.0):
+if control_data[prim_3_quality_gene] == -1.0 or control_data[prim_5_quality_gene] == -1.0:
 	print('Ct values for one of quality genes are not avaible. Quality ratio cannot be calculated, consider redoing the epreriment')
 else:
 	quality_ratio = control_data[prim_3_quality_gene]/control_data[prim_5_quality_gene]
@@ -70,11 +73,14 @@ for gene in tested_genes:
 print('\n')
 delta_ct_values_stress = {}
 print('Stress data:')
-quality_ratio = float(stress_data['GAPDH3'])/float(stress_data['GAPDH5'])
-print(f'Quality ratio = {quality_ratio}')
+if stress_data[prim_3_quality_gene] == -1.0 or stress_data[prim_5_quality_gene] == -1.0:
+	print('Ct values for at least one of quality genes are not avaible. Quality ratio cannot be calculated, consider redoing the epreriment')
+else:
+	quality_ratio = stress_data[prim_3_quality_gene]/stress_data[prim_5_quality_gene]
+	print(f'Quality ratio = {quality_ratio}')
 print('Delta Ct values for each of tested genes:')
 for gene in tested_genes:
-	delta_ct = float(stress_data[gene]) - float(stress_data[housekeeping_gene])
+	delta_ct = stress_data[gene] - stress_data[housekeeping_gene]
 	delta_ct_values_stress[gene] = delta_ct
 	print(f'{gene} --- {delta_ct}')
 
@@ -108,11 +114,3 @@ if decreased_genes:
 	print("These genes had lower expression in stress samples, which means they would hamper organism's efforts in responding to this particular stress")
 	for gene in decreased_genes:
 		print(f' - {gene}')
-
-
-# ToDo:
-# - make chosing fields in tsv file based on names, not idexes
-# - add command line options
-# - add testing for empty values in tsv file
-# - pack delta Ct calculation into a function, less code
-
