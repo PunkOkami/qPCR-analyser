@@ -16,7 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import csv
-from sys import exit as sexit
+from sys import exit as s_exit
 
 file = open('data/qPCR_results_custom_genes.txt')
 reader = csv.reader(file, delimiter = '\t')
@@ -52,23 +52,41 @@ tested_genes = ['ATG8H', 'HSP101', 'RCAR3']
 housekeeping_gene = 'ef1alfa'
 prim_3_quality_gene = 'GAPDH3'
 prim_5_quality_gene = 'GAPDH5'
-if control_data[housekeeping_gene] == -1.0 or stress_data[housekeeping_gene] == -1.0:
-	print('There is no Ct data available for housekeeping gene, execution halted, check input file')
-	sexit(1)
 print(f'Gene used as referance is {housekeeping_gene}\n')
 
 delta_ct_values_control = {}
-print('Control data:')
-if control_data[prim_3_quality_gene] == -1.0 or control_data[prim_5_quality_gene] == -1.0:
-	print('Ct values for one of quality genes are not avaible. Quality ratio cannot be calculated, consider redoing the epreriment')
+if len(control_data) == 0:
+	print('FATAL ERROR:\nControl sample is not available, calculation of control delta Ct halted')
+elif control_data.get(housekeeping_gene, 'Not there') == 'Not there':
+	print('FATAL ERROR:\nThere is no Ct data available for housekeeping gene, execution halted, but there is some data for other genes.')
+	print('Check if name of housekeeping gene is correct')
+elif control_data[housekeeping_gene] == -1.0:
+	print('FATAL ERROR:\nCt value is Undetermined. qPCR machine could not see any amplification of housekeeping gene in control samples.')
+	print('Redo the experiment')
 else:
-	quality_ratio = control_data[prim_3_quality_gene]/control_data[prim_5_quality_gene]
-	print(f'Quality ratio = {quality_ratio}')
-print('Delta Ct values for each of tested genes:')
-for gene in tested_genes:
-	delta_ct = control_data[gene] - control_data[housekeeping_gene]
-	delta_ct_values_control[gene] = delta_ct
-	print(f'{gene} --- {delta_ct}')
+	print('Control data:')
+	ct_prim_3 = control_data.get(prim_3_quality_gene, 'Not there')
+	ct_prim_5 = control_data.get(prim_5_quality_gene, 'Not there')
+	if ct_prim_3 == 'Not there' or ct_prim_5 == "Not there":
+		print('Name of one of quality genes is not available, check the names with data file')
+	elif ct_prim_3 == -1.0 or ct_prim_5 == -1.0:
+		print('Ct values for one of quality genes are Undetermined. Quality ratio cannot be calculated, you might want to redo the experiment')
+	else:
+		quality_ratio = control_data[prim_3_quality_gene]/control_data[prim_5_quality_gene]
+		print(f'Quality ratio = {quality_ratio}')
+	print('Delta Ct values for each of tested genes:\nGene --- Ct value --- Delta Ct value')
+	delta_ct = 0
+	for gene in tested_genes:
+		control_ct_gene = control_data.get(gene, 'Not there')
+		if control_ct_gene == 'Not there':
+			print(f'Gene name {gene} was not found in data for control samples, check if name is correct')
+		elif control_ct_gene == -1.0:
+			print(f"Ct values for {gene} are Undetermined, there was no amplification of this gene, delta_ct cannot be calculated")
+			delta_ct = 'Undetermined'
+		else:
+			delta_ct = control_ct_gene - control_data[housekeeping_gene]
+			print(f'{gene} --- {control_ct_gene} -- {delta_ct}')
+		delta_ct_values_control[gene] = delta_ct
 
 print('\n')
 delta_ct_values_stress = {}
