@@ -56,12 +56,12 @@ print(f'Gene used as referance is {housekeeping_gene}\n')
 
 delta_ct_values_control = {}
 if len(control_data) == 0:
-	print('FATAL ERROR:\nControl sample is not available, calculation of control delta Ct halted')
+	print('FATAL ERROR:\nControl sample is not available, calculation of control delta Ct halted. Check the name of control sample with data file')
 elif control_data.get(housekeeping_gene, 'Not there') == 'Not there':
 	print('FATAL ERROR:\nThere is no Ct data available for housekeeping gene, execution halted, but there is some data for other genes.')
 	print('Check if name of housekeeping gene is correct')
 elif control_data[housekeeping_gene] == -1.0:
-	print('FATAL ERROR:\nCt value is Undetermined. qPCR machine could not see any amplification of housekeeping gene in control samples.')
+	print('FATAL ERROR:\nCt value of houseeekping gene is Undetermined. qPCR machine could not see any amplification of housekeeping gene in control samples.')
 	print('Redo the experiment')
 else:
 	print('Control data:')
@@ -90,17 +90,38 @@ else:
 
 print('\n')
 delta_ct_values_stress = {}
-print('Stress data:')
-if stress_data[prim_3_quality_gene] == -1.0 or stress_data[prim_5_quality_gene] == -1.0:
-	print('Ct values for at least one of quality genes are not avaible. Quality ratio cannot be calculated, consider redoing the epreriment')
+if len(stress_data) == 0:
+	print('FATAL ERROR:\nStress sample is not available, calculation of stress delta Ct halted, Check the name of control sample with data file')
+elif stress_data.get(housekeeping_gene, 'Not there') == 'Not there':
+	print('FATAL ERROR:\nThere is no Ct data available for housekeeping gene, execution halted, but there is some data for other genes.')
+	print('Check if name of housekeeping gene is correct')
+elif stress_data[housekeeping_gene] == -1.0:
+	print('FATAL ERROR:\nCt value of housekeeping gene is Undetermined. qPCR machine could not see any amplification of housekeeping gene in stress samples.')
+	print('Redo the experiment')
 else:
-	quality_ratio = stress_data[prim_3_quality_gene]/stress_data[prim_5_quality_gene]
-	print(f'Quality ratio = {quality_ratio}')
-print('Delta Ct values for each of tested genes:')
-for gene in tested_genes:
-	delta_ct = stress_data[gene] - stress_data[housekeeping_gene]
-	delta_ct_values_stress[gene] = delta_ct
-	print(f'{gene} --- {delta_ct}')
+	print('Stress data:')
+	ct_prim_3 = stress_data.get(prim_3_quality_gene, 'Not there')
+	ct_prim_5 = stress_data.get(prim_5_quality_gene, 'Not there')
+	if ct_prim_3 == 'Not there' or ct_prim_5 == "Not there":
+		print('Name of one of quality genes is not available, check the names with data file')
+	elif ct_prim_3 == -1.0 or ct_prim_5 == -1.0:
+		print('Ct values for one of quality genes are Undetermined. Quality ratio cannot be calculated, you might want to redo the experiment')
+	else:
+		quality_ratio = stress_data[prim_3_quality_gene]/stress_data[prim_5_quality_gene]
+		print(f'Quality ratio = {quality_ratio}')
+	print('Delta Ct values for each of tested genes:\nGene --- Ct value --- Delta Ct value')
+	delta_ct = 0
+	for gene in tested_genes:
+		stress_ct_gene = stress_data.get(gene, 'Not there')
+		if stress_ct_gene == 'Not there':
+			print(f'Gene name {gene} was not found in data for stress samples, check if name is correct')
+		elif stress_ct_gene == -1.0:
+			print(f"Ct values for {gene} are Undetermined, there was no amplification of this gene, delta_ct cannot be calculated")
+			delta_ct = 'Undetermined'
+		else:
+			delta_ct = stress_ct_gene - stress_data[housekeeping_gene]
+			print(f'{gene} --- {stress_ct_gene} -- {delta_ct}')
+		delta_ct_values_stress[gene] = delta_ct
 
 print('\n')
 print('Delta delta Ct values for each tested genes:')
