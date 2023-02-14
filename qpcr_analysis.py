@@ -53,16 +53,18 @@ housekeeping_gene = 'ef1alfa'
 prim_3_quality_gene = 'GAPDH3'
 prim_5_quality_gene = 'GAPDH5'
 print(f'Gene used as referance is {housekeeping_gene}\n')
-
 delta_ct_values_control = {}
 if len(control_data) == 0:
 	print('FATAL ERROR:\nControl sample is not available, calculation of control delta Ct halted. Check the name of control sample with data file')
+	s_exit(1)
 elif control_data.get(housekeeping_gene, 'Not there') == 'Not there':
 	print('FATAL ERROR:\nThere is no Ct data available for housekeeping gene, execution halted, but there is some data for other genes.')
 	print('Check if name of housekeeping gene is correct')
+	s_exit(1)
 elif control_data[housekeeping_gene] == -1.0:
 	print('FATAL ERROR:\nCt value of houseeekping gene is Undetermined. qPCR machine could not see any amplification of housekeeping gene in control samples.')
 	print('Redo the experiment')
+	s_exit(1)
 else:
 	print('Control data:')
 	ct_prim_3 = control_data.get(prim_3_quality_gene, 'Not there')
@@ -107,12 +109,15 @@ else:
 delta_ct_values_stress = {}
 if len(stress_data) == 0:
 	print('FATAL ERROR:\nStress sample is not available, calculation of stress delta Ct halted, Check the name of control sample with data file')
+	s_exit(1)
 elif stress_data.get(housekeeping_gene, 'Not there') == 'Not there':
 	print('FATAL ERROR:\nThere is no Ct data available for housekeeping gene, execution halted, but there is some data for other genes.')
 	print('Check if name of housekeeping gene is correct')
+	s_exit(1)
 elif stress_data[housekeeping_gene] == -1.0:
 	print('FATAL ERROR:\nCt value of housekeeping gene is Undetermined. qPCR machine could not see any amplification of housekeeping gene in stress samples.')
 	print('Redo the experiment')
+	s_exit(1)
 else:
 	print('Stress data:')
 	ct_prim_3 = stress_data.get(prim_3_quality_gene, 'Not there')
