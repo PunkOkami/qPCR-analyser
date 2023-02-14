@@ -89,6 +89,21 @@ else:
 		delta_ct_values_control[gene] = delta_ct
 
 print('\n')
+if len(delta_ct_values_control) == 0:
+	print('FATAL ERROR:\nThere are no delta Ct values for genes in control sample data, no genes in tested gene were found in data file')
+	s_exit(1)
+
+control_usable_data = 0
+for delta_ct in delta_ct_values_control.values():
+	if delta_ct != "Undetermined":
+		control_usable_data += 1
+if control_usable_data == 0:
+	print('FATAL ERROR:\nNo genes in control sample had Ct values, calculation of Delta Ct failed and program halted')
+	s_exit(1)
+else:
+	print(f'{control_usable_data} out of {len(delta_ct_values_control)} genes in stress sample have Delta Ct calculated, those genes will be used for calculation of Delta Delta Ct values')
+	print('\n')
+
 delta_ct_values_stress = {}
 if len(stress_data) == 0:
 	print('FATAL ERROR:\nStress sample is not available, calculation of stress delta Ct halted, Check the name of control sample with data file')
@@ -124,15 +139,38 @@ else:
 		delta_ct_values_stress[gene] = delta_ct
 
 print('\n')
-print('Delta delta Ct values for each tested genes:')
+if len(delta_ct_values_stress) == 0:
+	print('FATAL ERROR:\nThere are no delta Ct values for genes in stress sample data, no genes in tested gene were found in data file')
+	s_exit(1)
+
+stress_usable_data = 0
+for delta_ct in delta_ct_values_stress.values():
+	if delta_ct != "Undetermined":
+		stress_usable_data += 1
+if stress_usable_data == 0:
+	print('FATAL ERROR:\nNo genes in stress sample had Ct values, calculation of Delta Ct failed and program halted')
+	s_exit(1)
+else:
+	print(f'{stress_usable_data} out of {len(delta_ct_values_stress)} genes in stress sample have Delta Ct calculated, those genes will be used for calculation of Delta Delta Ct values')
+	print('\n')
+
+print('Delta delta Ct values for each of tested genes:')
 delta_delta_ct_values = {}
 for gene in tested_genes:
-	delta_delta_ct = delta_ct_values_stress[gene] - delta_ct_values_control[gene]
-	delta_delta_ct_values[gene] = delta_delta_ct
-	print(f'{gene} --- {delta_delta_ct}')
-
+	delta_ct_control = delta_ct_values_control.get(gene, 'Not there')
+	delta_ct_stress = delta_ct_values_stress.get(gene, 'Not there')
+	if delta_ct_control in ('Undetermined', 'Not there') or delta_ct_stress in ('Undetermined', 'Not there'):
+		print(f'Gene {gene} had incorrect Ct value in one of samples, check output above for details')
+	else:
+		delta_delta_ct = delta_ct_stress - delta_ct_control
+		delta_delta_ct_values[gene] = delta_delta_ct
+		print(f'{gene} --- {delta_delta_ct}')
 
 print('\n')
+if len(delta_delta_ct_values) == 0:
+	print('FATAL ERROR\nThere are no calculated Delta Delta Ct values, check the output above for details')
+	s_exit(1)
+
 print('Fold change for each of tested genes:')
 for gene in tested_genes:
 	delta_delta_ct = -delta_delta_ct_values[gene]
