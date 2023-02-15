@@ -48,21 +48,22 @@ for row in reader:
 			ct_mean = float(ct_mean)
 		stress_data[gene_name] = ct_mean
 
-tested_genes = ['ATG8H', 'HSP101', 'RCAR3']
+tested_genes = ['ATG8h', 'HSP101', 'RCAR3']
 housekeeping_gene = 'ef1alfa'
 prim_3_quality_gene = 'GAPDH3'
 prim_5_quality_gene = 'GAPDH5'
 print(f'Gene used as referance is {housekeeping_gene}\n')
 delta_ct_values_control = {}
 if len(control_data) == 0:
-	print('FATAL ERROR:\nControl sample is not available, calculation of control delta Ct halted. Check the name of control sample with data file')
+	print('FATAL ERROR:\nControl sample is not available, calculation of control delta Ct halted.')
+	print('Check the name of control sample with data file')
 	s_exit(1)
 elif control_data.get(housekeeping_gene, 'Not there') == 'Not there':
-	print('FATAL ERROR:\nThere is no Ct data available for housekeeping gene, execution halted, but there is some data for other genes.')
-	print('Check if name of housekeeping gene is correct')
+	print('FATAL ERROR:\nThere is no Ct data available for housekeeping gene. Execution halted. Data for other genes available.')
+	print('Check if the name of housekeeping gene is correct')
 	s_exit(1)
 elif control_data[housekeeping_gene] == -1.0:
-	print('FATAL ERROR:\nCt value of houseeekping gene is Undetermined. qPCR machine could not see any amplification of housekeeping gene in control samples.')
+	print('FATAL ERROR:\nCt value of houseeekping gene is "Undetermined". qPCR machine could not detect any amplification of housekeeping gene in control samples.')
 	print('Redo the experiment')
 	s_exit(1)
 else:
@@ -70,29 +71,30 @@ else:
 	ct_prim_3 = control_data.get(prim_3_quality_gene, 'Not there')
 	ct_prim_5 = control_data.get(prim_5_quality_gene, 'Not there')
 	if ct_prim_3 == 'Not there' or ct_prim_5 == "Not there":
-		print('Name of one of quality genes is not available, check the names with data file')
+		print('Name of one of quality genes is not available, compare the names with data file')
 	elif ct_prim_3 == -1.0 or ct_prim_5 == -1.0:
-		print('Ct values for one of quality genes are Undetermined. Quality ratio cannot be calculated, you might want to redo the experiment')
+		print('Ct values for at least one of quality genes is "Undetermined". Quality ratio cannot be calculated.')
+		print('Redoing the experiment recommended')
 	else:
 		quality_ratio = control_data[prim_3_quality_gene]/control_data[prim_5_quality_gene]
 		print(f'Quality ratio = {quality_ratio}')
 	print('Delta Ct values for each of tested genes:\nGene --- Ct value --- Delta Ct value')
-	delta_ct = 0
 	for gene in tested_genes:
 		control_ct_gene = control_data.get(gene, 'Not there')
 		if control_ct_gene == 'Not there':
-			print(f'Gene name {gene} was not found in data for control samples, check if name is correct')
+			print(f'Gene name {gene} was not found in control sample data, check if input name is correct')
 		elif control_ct_gene == -1.0:
-			print(f"Ct values for {gene} are Undetermined, there was no amplification of this gene, delta_ct cannot be calculated")
+			print(f'Ct values for {gene} are "Undetermined". No amplification of this gene was detected. Delta Ct cannot be calculated')
 			delta_ct = 'Undetermined'
+			delta_ct_values_control[gene] = delta_ct
 		else:
 			delta_ct = control_ct_gene - control_data[housekeeping_gene]
 			print(f'{gene} --- {control_ct_gene} -- {delta_ct}')
-		delta_ct_values_control[gene] = delta_ct
+			delta_ct_values_control[gene] = delta_ct
 
 print('\n')
 if len(delta_ct_values_control) == 0:
-	print('FATAL ERROR:\nThere are no delta Ct values for genes in control sample data, no genes in tested gene were found in data file')
+	print('FATAL ERROR:\nThere are no Delta Ct values for genes in control sample data. No genes in tested genes were found in data file')
 	s_exit(1)
 
 control_usable_data = 0
@@ -100,22 +102,24 @@ for delta_ct in delta_ct_values_control.values():
 	if delta_ct != "Undetermined":
 		control_usable_data += 1
 if control_usable_data == 0:
-	print('FATAL ERROR:\nNo genes in control sample had Ct values, calculation of Delta Ct failed and program halted')
+	print('FATAL ERROR:\nNo genes in control sample had Ct values. Calculation of Delta Ct failed, program halted')
 	s_exit(1)
 else:
-	print(f'{control_usable_data} out of {len(delta_ct_values_control)} genes in stress sample have Delta Ct calculated, those genes will be used for calculation of Delta Delta Ct values')
+	print(f'{control_usable_data} out of {len(tested_genes)} input genes in control sample have Delta Ct calculated.', end='')
+	print(f'Those genes will be used for calculation of Delta Delta Ct values')
 	print('\n')
 
 delta_ct_values_stress = {}
 if len(stress_data) == 0:
-	print('FATAL ERROR:\nStress sample is not available, calculation of stress delta Ct halted, Check the name of control sample with data file')
+	print('FATAL ERROR:\nStress sample is not available, calculation of stress delta Ct halted.')
+	print('Check the name of control sample with data file')
 	s_exit(1)
 elif stress_data.get(housekeeping_gene, 'Not there') == 'Not there':
-	print('FATAL ERROR:\nThere is no Ct data available for housekeeping gene, execution halted, but there is some data for other genes.')
-	print('Check if name of housekeeping gene is correct')
+	print('FATAL ERROR:\nThere is no Ct data available for housekeeping gene. Execution halted. Data for other genes available.')
+	print('Check if the name of housekeeping gene is correct')
 	s_exit(1)
 elif stress_data[housekeeping_gene] == -1.0:
-	print('FATAL ERROR:\nCt value of housekeeping gene is Undetermined. qPCR machine could not see any amplification of housekeeping gene in stress samples.')
+	print('FATAL ERROR:\nCt value of houseeekping gene is "Undetermined". qPCR machine could not detect any amplification of housekeeping gene in stress samples.')
 	print('Redo the experiment')
 	s_exit(1)
 else:
@@ -123,29 +127,30 @@ else:
 	ct_prim_3 = stress_data.get(prim_3_quality_gene, 'Not there')
 	ct_prim_5 = stress_data.get(prim_5_quality_gene, 'Not there')
 	if ct_prim_3 == 'Not there' or ct_prim_5 == "Not there":
-		print('Name of one of quality genes is not available, check the names with data file')
+		print('Name of one of quality genes is not available, compare the names with data file')
 	elif ct_prim_3 == -1.0 or ct_prim_5 == -1.0:
-		print('Ct values for one of quality genes are Undetermined. Quality ratio cannot be calculated, you might want to redo the experiment')
+		print('Ct values for at least one of quality genes is "Undetermined". Quality ratio cannot be calculated.')
+		print('Redoing the experiment recommended')
 	else:
 		quality_ratio = stress_data[prim_3_quality_gene]/stress_data[prim_5_quality_gene]
 		print(f'Quality ratio = {quality_ratio}')
 	print('Delta Ct values for each of tested genes:\nGene --- Ct value --- Delta Ct value')
-	delta_ct = 0
 	for gene in tested_genes:
 		stress_ct_gene = stress_data.get(gene, 'Not there')
 		if stress_ct_gene == 'Not there':
-			print(f'Gene name {gene} was not found in data for stress samples, check if name is correct')
+			print(f'Gene name {gene} was not found in control sample data, check if input name is correct')
 		elif stress_ct_gene == -1.0:
-			print(f"Ct values for {gene} are Undetermined, there was no amplification of this gene, delta_ct cannot be calculated")
+			print(f'Ct values for {gene} are "Undetermined". No amplification of this gene was detected. Delta Ct cannot be calculated')
 			delta_ct = 'Undetermined'
+			delta_ct_values_stress[gene] = delta_ct
 		else:
 			delta_ct = stress_ct_gene - stress_data[housekeeping_gene]
 			print(f'{gene} --- {stress_ct_gene} -- {delta_ct}')
-		delta_ct_values_stress[gene] = delta_ct
+			delta_ct_values_stress[gene] = delta_ct
 
 print('\n')
 if len(delta_ct_values_stress) == 0:
-	print('FATAL ERROR:\nThere are no delta Ct values for genes in stress sample data, no genes in tested gene were found in data file')
+	print('FATAL ERROR:\nThere are no Delta Ct values for genes in stress sample data. No genes in tested genes were found in data file')
 	s_exit(1)
 
 stress_usable_data = 0
@@ -153,19 +158,20 @@ for delta_ct in delta_ct_values_stress.values():
 	if delta_ct != "Undetermined":
 		stress_usable_data += 1
 if stress_usable_data == 0:
-	print('FATAL ERROR:\nNo genes in stress sample had Ct values, calculation of Delta Ct failed and program halted')
+	print('FATAL ERROR:\nNo genes in stress sample had Ct values. Calculation of Delta Ct failed, program halted')
 	s_exit(1)
 else:
-	print(f'{stress_usable_data} out of {len(delta_ct_values_stress)} genes in stress sample have Delta Ct calculated, those genes will be used for calculation of Delta Delta Ct values')
+	print(f'{control_usable_data} out of {len(tested_genes)} input genes in control sample have Delta Ct calculated.', end='')
+	print(f'Those genes will be used for calculation of Delta Delta Ct values')
 	print('\n')
 
-print('Delta delta Ct values for each of tested genes:')
+print('Delta Delta Ct values for each of tested genes:')
 delta_delta_ct_values = {}
 for gene in tested_genes:
 	delta_ct_control = delta_ct_values_control.get(gene, 'Not there')
 	delta_ct_stress = delta_ct_values_stress.get(gene, 'Not there')
 	if delta_ct_control in ('Undetermined', 'Not there') or delta_ct_stress in ('Undetermined', 'Not there'):
-		print(f'Gene {gene} had incorrect Ct value in one of samples, check output above for details')
+		print(f'Gene {gene} had incorrect Ct value in at least one of samples, check output above for details')
 	else:
 		delta_delta_ct = delta_ct_stress - delta_ct_control
 		delta_delta_ct_values[gene] = delta_delta_ct
@@ -177,8 +183,8 @@ if len(delta_delta_ct_values) == 0:
 	s_exit(1)
 
 print('Fold change for each of tested genes:')
-for gene in tested_genes:
-	delta_delta_ct = -delta_delta_ct_values[gene]
+for (gene, delta_delta_ct) in delta_delta_ct_values.items():
+	delta_delta_ct = -delta_delta_ct
 	fold_change = 2**delta_delta_ct
 	print(f'{gene} --- {fold_change}')
 
@@ -187,12 +193,12 @@ decreased_genes = [key for (key, value) in delta_delta_ct_values.items() if valu
 
 print('\n')
 if increased_genes:
-	print("These genes had bigger expression in stress samples, which means they take part in organism's response to this particular stress")
+	print("These genes had bigger expression in stress samples, which suggests they take part in organism's response to this particular stress")
 	for gene in increased_genes:
 		print(f' - {gene}')
 
 print('\n')
 if decreased_genes:
-	print("These genes had lower expression in stress samples, which means they would hamper organism's efforts in responding to this particular stress")
+	print("These genes had lower expression in stress samples, which suggests they would hamper organism's efforts in responding to this particular stress")
 	for gene in decreased_genes:
 		print(f' - {gene}')
