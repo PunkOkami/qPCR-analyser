@@ -19,36 +19,53 @@ import csv
 from sys import exit as s_exit
 
 file = open('data/qPCR_results_custom_genes.txt')
-reader = csv.reader(file, delimiter = '\t')
+reader = csv.reader(file, delimiter='\t')
 
-sample_name_index = 1
-detector_name_index = 2
-ct_mean_index = 12
+sample_name_index = 0
+detector_name_index = 0
+ct_value_index = 0
 control_data = {}
 stress_data = {}
+
 for row in reader:
 	if len(row) < 2:
 		continue
-	if row[1] == 'kontrola Tomek i Zuzia':
+	if 'Well' in row:
+		sample_name_index = row.index('Sample Name')
+		detector_name_index = row.index('Detector Name')
+		ct_value_index = row.index('Ct')
+	if row[sample_name_index] == 'kontrola Tomek i Zuzia':
 		gene_name = row[detector_name_index]
-		ct_mean = row[ct_mean_index]
-		if ct_mean == '':
-			ct_mean = -1.0
-		elif  ct_mean == 'Undertermined':
-			ct_mean = -1.0
+		ct_value = row[ct_value_index]
+		if ct_value == 'Undetermined':
+			ct_value = -1.0
 		else:
-			ct_mean = float(ct_mean)
-		control_data[gene_name] = ct_mean
-	if row[1] == 'stres Tomek i Zuzio':
+			ct_value = float(ct_value)
+		ct_values = control_data.get(gene_name, [])
+		ct_values.append(ct_value)
+		control_data[gene_name] = ct_values
+	if row[sample_name_index] == 'stres Tomek i Zuzio':
 		gene_name = row[detector_name_index]
-		ct_mean = row[ct_mean_index]
-		if ct_mean == '':
-			ct_mean = -1.0
+		ct_value = row[ct_value_index]
+		if ct_value == 'Undetermined':
+			ct_value = -1.0
 		else:
-			ct_mean = float(ct_mean)
-		stress_data[gene_name] = ct_mean
+			ct_value = float(ct_value)
+		ct_values = stress_data.get(gene_name, [])
+		ct_values.append(ct_value)
+		stress_data[gene_name] = ct_values
 
-tested_genes = ['ATG8h', 'HSP101', 'RCAR3']
+for (gene_name, ct_values) in control_data.items():
+	ct_values = [ct for ct in ct_values if ct != -1.0]
+	ct_values = round(sum(ct_values)/len(ct_values), 7)
+	control_data[gene_name] = ct_values
+
+for (gene_name, ct_values) in stress_data.items():
+	ct_values = [ct for ct in ct_values if ct != -1.0]
+	ct_values = round(sum(ct_values)/len(ct_values), 7)
+	stress_data[gene_name] = ct_values
+
+tested_genes = ['ATG8H', 'HSP101', 'RCAR3']
 housekeeping_gene = 'ef1alfa'
 prim_3_quality_gene = 'GAPDH3'
 prim_5_quality_gene = 'GAPDH5'
