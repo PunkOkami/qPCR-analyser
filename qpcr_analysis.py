@@ -16,10 +16,28 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import csv
+import argparse
 from sys import exit as s_exit
 
-file = open('data/qPCR_results_custom_genes.txt')
+parser = argparse.ArgumentParser(prog='qPCR Analysis Tool', description='This is a simple command line tool for basic analysis of qPCR results')
+parser.add_argument('file_name', help='path to the file with qpcr run results in tsv format')
+parser.add_argument('control_sample_name', help='name of control sample in data file')
+parser.add_argument('stress_sample_name', help='name of stress sample in data file')
+parser.add_argument('tested_genes', help='comma seperated list of tested genes Eg: "gene1,gene2,gene3"')
+parser.add_argument('housekeeping_gene', help='housekeeping gene to be used for normalization of ct values')
+parser.add_argument('prim_3_quality_gene', help='3 prim part of gene used for quality control of samples')
+parser.add_argument('prim_5_quality_gene', help='5 prim part of gene used for quality control of samples')
+args = parser.parse_args()
+
+file = open(args.file_name)
 reader = csv.reader(file, delimiter='\t')
+
+control_sample_name = args.control_sample_name
+stress_sample_name = args.stress_sample_name
+tested_genes = args.tested_genes.split(',')
+housekeeping_gene = args.housekeeping_gene
+prim_3_quality_gene = args.prim_3_quality_gene
+prim_5_quality_gene = args.prim_5_quality_gene
 
 sample_name_index = 0
 detector_name_index = 0
@@ -34,7 +52,7 @@ for row in reader:
 		sample_name_index = row.index('Sample Name')
 		detector_name_index = row.index('Detector Name')
 		ct_value_index = row.index('Ct')
-	if row[sample_name_index] == 'kontrola Tomek i Zuzia':
+	if row[sample_name_index] == control_sample_name:
 		gene_name = row[detector_name_index]
 		ct_value = row[ct_value_index]
 		if ct_value == 'Undetermined':
@@ -44,7 +62,7 @@ for row in reader:
 		ct_values = control_data.get(gene_name, [])
 		ct_values.append(ct_value)
 		control_data[gene_name] = ct_values
-	if row[sample_name_index] == 'stres Tomek i Zuzio':
+	if row[sample_name_index] == stress_sample_name:
 		gene_name = row[detector_name_index]
 		ct_value = row[ct_value_index]
 		if ct_value == 'Undetermined':
@@ -65,10 +83,7 @@ for (gene_name, ct_values) in stress_data.items():
 	ct_values = round(sum(ct_values)/len(ct_values), 7)
 	stress_data[gene_name] = ct_values
 
-tested_genes = ['ATG8H', 'HSP101', 'RCAR3']
-housekeeping_gene = 'ef1alfa'
-prim_3_quality_gene = 'GAPDH3'
-prim_5_quality_gene = 'GAPDH5'
+
 print(f'Gene used as referance is {housekeeping_gene}\n')
 delta_ct_values_control = {}
 if len(control_data) == 0:
